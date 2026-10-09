@@ -1,0 +1,145 @@
+{
+  "merges": [
+    [
+      "h",
+      "e"
+    ],
+    [
+      "he",
+      "l"
+    ],
+    [
+      "hel",
+      "l"
+    ],
+    [
+      "hell",
+      "o"
+    ],
+    [
+      "hello",
+      " "
+    ],
+    [
+      "i",
+      "n"
+    ],
+    [
+      "hello ",
+      "w"
+    ],
+    [
+      "hello w",
+      "o"
+    ],
+    [
+      "hello wo",
+      "r"
+    ],
+    [
+      "hello wor",
+      "l"
+    ],
+    [
+      "hello worl",
+      "d"
+    ],
+    [
+      "hello world",
+      " "
+    ],
+    [
+      "m",
+      "a"
+    ],
+    [
+      "ma",
+      "c"
+    ],
+    [
+      "mac",
+      "h"
+    ],
+    [
+      "mach",
+      "in"
+    ],
+    [
+      "machin",
+      "e"
+    ],
+    [
+      "machine",
+      " "
+    ],
+    [
+      "machine ",
+      "l"
+    ],
+    [
+      "machine l",
+      "e"
+    ],
+    [
+      "machine le",
+      "a"
+    ],
+    [
+      "machine lea",
+      "r"
+    ],
+    [
+      "machine lear",
+      "n"
+    ],
+    [
+      "machine learn",
+      "in"
+    ],
+    [
+      "machine learnin",
+      "g"
+    ]
+  ],
+  "vocab": {
+    " ": 0,
+    "a": 1,
+    "c": 2,
+    "d": 3,
+    "e": 4,
+    "g": 5,
+    "h": 6,
+    "he": 7,
+    "hel": 8,
+    "hell": 9,
+    "hello": 10,
+    "hello ": 11,
+    "hello w": 12,
+    "hello wo": 13,
+    "hello wor": 14,
+    "hello worl": 15,
+    "hello world": 16,
+    "hello world ": 17,
+    "i": 18,
+    "in": 19,
+    "l": 20,
+    "m": 21,
+    "ma": 22,
+    "mac": 23,
+    "mach": 24,
+    "machin": 25,
+    "machine": 26,
+    "machine ": 27,
+    "machine l": 28,
+    "machine le": 29,
+    "machine lea": 30,
+    "machine lear": 31,
+    "machine learn": 32,
+    "machine learnin": 33,
+    "machine learning": 34,
+    "n": 35,
+    "o": 36,
+    "r": 37,
+    "w": 38
+  }
+}
