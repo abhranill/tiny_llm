@@ -34,10 +34,27 @@ MODEL_CONFIG = {
 
 # 2. Load and split the text before training the tokenizer
 corpus = load_corpus("data/raw/tiny_corpus.txt")
-split_index = int(len(corpus) * TRAIN_RATIO)
 
-train_text = corpus[:split_index]
-val_text = corpus[split_index:]
+# Split the corpus by paragraph to avoid cutting text mid-paragraph.
+paragraphs = [
+    paragraph.strip()
+    for paragraph in corpus.split("\n\n")
+    if paragraph.strip()
+]
+
+if len(paragraphs) < 2:
+    raise ValueError("Need at least two paragraphs for a split.")
+
+split_index = int(len(paragraphs) * TRAIN_RATIO)
+split_index = max(1, min(split_index, len(paragraphs) - 1))
+
+train_text = "\n\n".join(paragraphs[:split_index])
+val_text = "\n\n".join(paragraphs[split_index:])
+
+print(f"Training paragraphs: {split_index}")
+print(f"Validation paragraphs: {len(paragraphs) - split_index}")
+print(f"Training characters: {len(train_text)}")
+print(f"Validation characters: {len(val_text)}")
 
 tokenizer = BPETokenizer()
 tokenizer.train(train_text, num_merges=NUM_MERGES)
