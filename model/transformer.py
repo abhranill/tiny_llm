@@ -49,13 +49,14 @@ class TransformerBlock(nn.Module):
         self.feed_forward = FeedForward(embed_dim, dropout)
 
     def forward(self, x):
-        # First sublayer: attention plus residual connection.
+        # Attention followed by a residual connection.
         x = x + self.attention(self.ln1(x))
 
-        # Second sublayer: feed-forward network plus residual.
+        # Feed-forward network followed by a residual connection.
         x = x + self.feed_forward(self.ln2(x))
 
         return x
+
 
 class TinyGPT(nn.Module):
     """A small decoder-only Transformer language model."""
@@ -76,14 +77,14 @@ class TinyGPT(nn.Module):
         # Convert token IDs into learned vectors.
         self.token_embedding = nn.Embedding(vocab_size, embed_dim)
 
-        # Give each position a learned positional vector.
+        # Learn a vector for each token position.
         self.position_embedding = nn.Embedding(
             context_length, embed_dim
         )
 
         self.embedding_dropout = nn.Dropout(dropout)
 
-        # Stack multiple Transformer blocks.
+        # Stack Transformer blocks.
         self.blocks = nn.Sequential(
             *[
                 TransformerBlock(
@@ -98,18 +99,23 @@ class TinyGPT(nn.Module):
 
         self.final_norm = nn.LayerNorm(embed_dim)
 
-        # Convert each token representation into vocabulary scores.
+        # Produce one score for each vocabulary token.
         self.lm_head = nn.Linear(embed_dim, vocab_size)
 
     def forward(self, input_ids):
+        """Convert token IDs into next-token prediction logits."""
+
         batch_size, sequence_length = input_ids.shape
 
         if sequence_length > self.context_length:
-            raise ValueError("Input exceeds the model's context length.")
+            raise ValueError(
+                "Input exceeds the model's context length."
+            )
 
-        # Shape: (sequence_length,)
+        # Positions: (sequence_length,)
         positions = torch.arange(
-            sequence_length, device=input_ids.device
+            sequence_length,
+            device=input_ids.device,
         )
 
         # Both embeddings have shape (batch, sequence, embed_dim).
@@ -122,7 +128,62 @@ class TinyGPT(nn.Module):
         x = self.blocks(x)
         x = self.final_norm(x)
 
-        # Shape: (batch, sequence, vocab_size)
+        # Logits: (batch, sequence, vocab_size)
         logits = self.lm_head(x)
 
         return logits
+
+    @torch.no_grad()
+    def generate(
+        self,
+        input_ids,
+        max_new_tokens=40,
+        temperature=1.0,
+        top_k=None,
+    ):
+        """Generate new token IDs autoregressively."""
+
+        if temperature <= 0:
+            raise ValueError("temperature must be greater than zero.")
+
+        if top_k is not None and top_k < 1:
+            raise ValueError("top_k must be at least 1.")
+
+        was_training = self.training
+        self.eval()
+
+        try:
+            for _ in range(max_new_tokens):
+                # Keep only the tokens that fit the context window.
+                input_context = input_ids[:, -self.context_length:]
+
+                # Get scores and select the final position.
+                logits = self(input_context)
+                logits = logits[:, -1, :] / temperature
+
+                # Optionally restrict sampling to the top-k tokens.
+                if top_k is not None:
+                    k = min(top_k, logits.size(-1))
+                    top_values, _ = torch.topk(logits, k, dim=-1)
+                    threshold = top_values[:, -1].unsqueeze(-1)
+
+                    logits = logits.masked_fill(
+                        logits < threshold,
+                        float("-inf"),
+                    )
+
+                probabilities = torch.softmax(logits, dim=-1)
+
+                next_token = torch.multinomial(
+                    probabilities,
+                    num_samples=1,
+                )
+
+                input_ids = torch.cat(
+                    (input_ids, next_token),
+                    dim=1,
+                )
+        finally:
+            self.train(was_training)
+
+        return input_ids
