@@ -143,11 +143,24 @@ class TinyGPT(nn.Module):
     ):
         """Generate new token IDs autoregressively."""
 
-        if temperature <= 0:
-            raise ValueError("temperature must be greater than zero.")
+        if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool):
+    raise ValueError("max_new_tokens must be a non-negative integer.")
 
-        if top_k is not None and top_k < 1:
-            raise ValueError("top_k must be at least 1.")
+if max_new_tokens < 0:
+    raise ValueError("max_new_tokens must be a non-negative integer.")
+
+if not isinstance(temperature, (int, float)) or isinstance(temperature, bool):
+    raise ValueError("temperature must be a positive number.")
+
+if not torch.isfinite(torch.tensor(float(temperature))) or temperature <= 0:
+    raise ValueError("temperature must be finite and greater than zero.")
+
+if top_k is not None:
+    if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k < 1:
+        raise ValueError("top_k must be a positive integer or None.")
+
+if input_ids.ndim != 2 or input_ids.size(0) < 1 or input_ids.size(1) < 1:
+    raise ValueError("input_ids must have shape (batch_size, sequence_length).")
 
         was_training = self.training
         self.eval()
