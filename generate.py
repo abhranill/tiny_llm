@@ -58,8 +58,8 @@ def main():
         output_ids = model.generate(
             input_ids,
             max_new_tokens=40,
-            temperature=0.8,
-            top_k=10,
+           temperature=1.2,
+top_k=20,
         )
 
     # Convert all generated IDs back into text.
