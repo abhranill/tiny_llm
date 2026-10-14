@@ -1,0 +1,26 @@
+TinyGPT Generation Experiments
+============================================================
+Device: cuda
+Checkpoint epoch: 4
+Prompt: A language model
+Max new tokens: 40
+Random seed: 42
+
+Experiment: Low temperature
+Temperature: 0.5
+Top-k: 5
+Prompt: A language model
+Generated text: A language model performWhanompres the sing ra dienteriletasis mpnexa
+------------------------------------------------------------
+Experiment: Baseline
+Temperature: 0.8
+Top-k: 10
+Prompt: A language model
+Generated text: A language model ustionrallcodghomos, acalients eryer ction forkata i
+------------------------------------------------------------
+Experiment: High variety
+Temperature: 1.2
+Top-k: 20
+Prompt: A language model
+Generated text: A language modelations hr arLtinopghothe s, acdients ery.verts sis monnext
+------------------------------------------------------------
