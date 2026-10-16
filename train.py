@@ -1,6 +1,7 @@
 
-"""Train TinyGPT on our small text corpus."""
 
+
+import csv
 from pathlib import Path
 
 import torch
@@ -22,6 +23,7 @@ NUM_EPOCHS = 50
 LEARNING_RATE = 3e-4
 NUM_MERGES = 25
 TRAIN_RATIO = 0.85
+PATIENCE = 5
 
 MODEL_CONFIG = {
     "embed_dim": 64,
@@ -32,10 +34,9 @@ MODEL_CONFIG = {
 }
 
 
-# 2. Load and split the text before training the tokenizer
+# 2. Load and split the corpus by paragraph
 corpus = load_corpus("data/raw/tiny_corpus.txt")
 
-# Split the corpus by paragraph to avoid cutting text mid-paragraph.
 paragraphs = [
     paragraph.strip()
     for paragraph in corpus.split("\n\n")
@@ -56,6 +57,8 @@ print(f"Validation paragraphs: {len(paragraphs) - split_index}")
 print(f"Training characters: {len(train_text)}")
 print(f"Validation characters: {len(val_text)}")
 
+
+# 3. Train the tokenizer on training text only
 tokenizer = BPETokenizer()
 tokenizer.train(train_text, num_merges=NUM_MERGES)
 
@@ -64,6 +67,7 @@ val_ids = tokenizer.encode(val_text)
 
 if len(train_ids) <= SEQUENCE_LENGTH:
     raise ValueError("Not enough training tokens.")
+
 if len(val_ids) <= SEQUENCE_LENGTH:
     raise ValueError(
         "Not enough validation tokens. Use a shorter sequence length "
@@ -78,6 +82,7 @@ train_loader = DataLoader(
     batch_size=BATCH_SIZE,
     shuffle=True,
 )
+
 val_loader = DataLoader(
     val_dataset,
     batch_size=BATCH_SIZE,
@@ -88,7 +93,7 @@ val_loader = DataLoader(
 tokenizer.save("tokenizer/tokenizer.json")
 
 
-# 3. Create the model and optimizer
+# 4. Create the model and optimizer
 model = TinyGPT(
     vocab_size=len(tokenizer.vocab),
     **MODEL_CONFIG,
@@ -102,8 +107,10 @@ optimizer = torch.optim.AdamW(
 criterion = nn.CrossEntropyLoss()
 
 print("Device:", DEVICE)
+
 if DEVICE.type == "cuda":
     print("GPU:", torch.cuda.get_device_name(0))
+
 print("Corpus characters:", len(corpus))
 print("Training tokens:", len(train_ids))
 print("Validation tokens:", len(val_ids))
@@ -114,7 +121,7 @@ print(
 )
 
 
-# 4. Evaluate without updating the model
+# 5. Evaluate without updating model parameters
 def evaluate(data_loader):
     model.eval()
     total_loss = 0.0
@@ -126,6 +133,7 @@ def evaluate(data_loader):
             y = y.to(DEVICE)
 
             logits = model(x)
+
             loss = criterion(
                 logits.reshape(-1, len(tokenizer.vocab)),
                 y.reshape(-1),
@@ -134,22 +142,44 @@ def evaluate(data_loader):
             total_loss += loss.item()
             total_batches += 1
 
-    model.train()
+    if total_batches == 0:
+        raise ValueError("Cannot evaluate an empty data loader.")
+
     return total_loss / total_batches
 
 
-
-# 5. Training loop with early stopping
-best_validation_loss = float("inf")
-patience = 5
-epochs_without_improvement = 0
-
+# 6. Prepare checkpoint and training-history files
 checkpoint_path = Path("checkpoints/tiny_gpt.pt")
 checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+
+history_path = Path("experiments/training_history.csv")
+history_path.parent.mkdir(parents=True, exist_ok=True)
+
+history_fields = [
+    "epoch",
+    "train_loss",
+    "validation_loss",
+    "learning_rate",
+    "best_checkpoint",
+]
+
+# Start a fresh CSV for this training run.
+with history_path.open("w", newline="", encoding="utf-8") as file:
+    writer = csv.DictWriter(file, fieldnames=history_fields)
+    writer.writeheader()
+
+training_history = []
+
+
+# 7. Training loop with early stopping and diagnostics
+best_validation_loss = float("inf")
+best_epoch = 0
+epochs_without_improvement = 0
 
 for epoch in range(NUM_EPOCHS):
     model.train()
     total_train_loss = 0.0
+    total_train_batches = 0
 
     for x, y in train_loader:
         x = x.to(DEVICE)
@@ -158,6 +188,7 @@ for epoch in range(NUM_EPOCHS):
         optimizer.zero_grad(set_to_none=True)
 
         logits = model(x)
+
         loss = criterion(
             logits.reshape(-1, len(tokenizer.vocab)),
             y.reshape(-1),
@@ -168,17 +199,23 @@ for epoch in range(NUM_EPOCHS):
         optimizer.step()
 
         total_train_loss += loss.item()
+        total_train_batches += 1
 
-    average_train_loss = total_train_loss / len(train_loader)
+    if total_train_batches == 0:
+        raise ValueError("Cannot train with an empty data loader.")
+
+    average_train_loss = total_train_loss / total_train_batches
     validation_loss = evaluate(val_loader)
 
     improved = validation_loss < best_validation_loss
+    current_lr = optimizer.param_groups[0]["lr"]
 
     if improved:
         best_validation_loss = validation_loss
+        best_epoch = epoch + 1
         epochs_without_improvement = 0
 
-        # Save the best weights seen so far.
+        # Save the best model, not necessarily the final epoch.
         torch.save(
             {
                 "model_state_dict": model.state_dict(),
@@ -194,20 +231,87 @@ for epoch in range(NUM_EPOCHS):
     else:
         epochs_without_improvement += 1
 
+    epoch_record = {
+        "epoch": epoch + 1,
+        "train_loss": round(average_train_loss, 6),
+        "validation_loss": round(validation_loss, 6),
+        "learning_rate": current_lr,
+        "best_checkpoint": improved,
+    }
+
+    training_history.append(epoch_record)
+
+    # Save each epoch immediately so history survives early stopping.
+    with history_path.open("a", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=history_fields)
+        writer.writerow(epoch_record)
+
     print(
         f"Epoch {epoch + 1:3d}/{NUM_EPOCHS} | "
         f"Train loss: {average_train_loss:.4f} | "
-        f"Validation loss: {validation_loss:.4f}"
+        f"Validation loss: {validation_loss:.4f} | "
+        f"LR: {current_lr:.2e}"
         + (" | Best checkpoint saved" if improved else "")
     )
 
-    if epochs_without_improvement >= patience:
-        print("Early stopping: validation loss did not improve.")
+    if epochs_without_improvement >= PATIENCE:
+        print(
+            f"Early stopping: validation loss did not improve "
+            f"for {PATIENCE} consecutive epochs."
+        )
         break
 
-print("Training complete!")
-print(f"Best validation loss: {best_validation_loss:.4f}")
-print("Best checkpoint saved to:", checkpoint_path)
-print("Tokenizer saved to: tokenizer/tokenizer.json")
 
+# 8. Final training report
+print("\n" + "=" * 45)
+print("TRAINING DIAGNOSTICS")
+print("=" * 45)
 
+best_record = min(
+    training_history,
+    key=lambda record: record["validation_loss"],
+)
+
+final_record = training_history[-1]
+
+overfit_gap = (
+    final_record["validation_loss"] - final_record["train_loss"]
+)
+
+print(f"Epochs completed: {len(training_history)}")
+print(f"Best epoch: {best_record['epoch']}")
+print(f"Best validation loss: {best_record['validation_loss']:.4f}")
+print(f"Final training loss: {final_record['train_loss']:.4f}")
+print(f"Final validation loss: {final_record['validation_loss']:.4f}")
+print(f"Final validation-training gap: {overfit_gap:.4f}")
+
+if len(training_history) >= 2:
+    first_record = training_history[0]
+    train_improvement = (
+        first_record["train_loss"] - final_record["train_loss"]
+    )
+    val_change = (
+        final_record["validation_loss"]
+        - best_record["validation_loss"]
+    )
+
+    print(f"Training-loss reduction: {train_improvement:.4f}")
+    print(f"Validation loss above best: {val_change:.4f}")
+
+    if (
+        final_record["train_loss"] < best_record["train_loss"]
+        and final_record["validation_loss"] > best_record["validation_loss"]
+    ):
+        print(
+            "Diagnostic: training loss improved while validation loss "
+            "moved above its best value. Possible overfitting."
+        )
+    else:
+        print(
+            "Diagnostic: inspect the CSV history to assess the loss trends."
+        )
+
+print(f"Training history: {history_path}")
+print(f"Best checkpoint: {checkpoint_path}")
+print("Tokenizer: tokenizer/tokenizer.json")
+print("=" * 45)

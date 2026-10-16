@@ -1,7 +1,8 @@
 
-"""Evaluate TinyGPT using non-overlapping next-token targets."""
+"""Evaluate TinyGPT with consistent, non-overlapping target chunks."""
 
 import math
+
 import torch
 import torch.nn.functional as F
 
@@ -29,15 +30,23 @@ def main():
     tokenizer.load(TOKENIZER_PATH)
 
     if len(tokenizer.vocab) != checkpoint["vocab_size"]:
-        raise ValueError("Tokenizer does not match checkpoint vocabulary.")
+        raise ValueError(
+            "Tokenizer vocabulary does not match checkpoint."
+        )
 
     corpus = load_corpus(CORPUS_PATH)
     paragraphs = [
-        p.strip() for p in corpus.split("\n\n") if p.strip()
+        p.strip()
+        for p in corpus.split("\n\n")
+        if p.strip()
     ]
+
+    if len(paragraphs) < 2:
+        raise ValueError("At least two paragraphs are required.")
 
     split_index = int(len(paragraphs) * TRAIN_RATIO)
     split_index = max(1, min(split_index, len(paragraphs) - 1))
+
     validation_text = "\n\n".join(paragraphs[split_index:])
     validation_ids = tokenizer.encode(validation_text)
 
@@ -48,52 +57,64 @@ def main():
         vocab_size=checkpoint["vocab_size"],
         **checkpoint["model_config"],
     ).to(DEVICE)
+
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
-    context_length = checkpoint["model_config"]["context_length"]
+    # Use the sequence length used to train this checkpoint.
+    chunk_length = checkpoint["sequence_length"]
+
     total_nll = 0.0
     total_targets = 0
 
-    # Score each target token once, using non-overlapping chunks.
-    # Each chunk predicts the tokens immediately following its inputs.
     with torch.no_grad():
-        for start in range(0, len(validation_ids) - 1, context_length):
-            end = min(start + context_length, len(validation_ids) - 1)
+        # Every next-token target is evaluated exactly once.
+        for start in range(0, len(validation_ids) - 1, chunk_length):
+            end = min(start + chunk_length, len(validation_ids) - 1)
 
             input_chunk = validation_ids[start:end]
             target_chunk = validation_ids[start + 1:end + 1]
 
-            if not input_chunk:
-                continue
-
             x = torch.tensor(
-                [input_chunk], dtype=torch.long, device=DEVICE
+                [input_chunk],
+                dtype=torch.long,
+                device=DEVICE,
             )
             y = torch.tensor(
-                [target_chunk], dtype=torch.long, device=DEVICE
+                [target_chunk],
+                dtype=torch.long,
+                device=DEVICE,
             )
 
             logits = model(x)
 
-            nll = F.cross_entropy(
+            loss_sum = F.cross_entropy(
                 logits.reshape(-1, checkpoint["vocab_size"]),
                 y.reshape(-1),
                 reduction="sum",
             )
 
-            total_nll += nll.item()
+            total_nll += loss_sum.item()
             total_targets += y.numel()
 
     mean_loss = total_nll / total_targets
-    perplexity = math.exp(mean_loss) if mean_loss < 709 else float("inf")
+    perplexity = (
+        math.exp(mean_loss)
+        if mean_loss < 709
+        else float("inf")
+    )
 
     print("\n--- TinyGPT Evaluation Report ---")
     print("Device:", DEVICE)
+
     if DEVICE.type == "cuda":
         print("GPU:", torch.cuda.get_device_name(0))
-    print("Checkpoint epoch:", checkpoint.get("training_epoch", "unknown"))
-    print("Checkpoint validation loss:", checkpoint.get("validation_loss", "unknown"))
+
+    print(
+        "Checkpoint epoch:",
+        checkpoint.get("training_epoch", "unknown"),
+    )
+    print("Training sequence length:", chunk_length)
     print("Vocabulary size:", checkpoint["vocab_size"])
     print("Validation paragraphs:", len(paragraphs) - split_index)
     print("Validation tokens:", len(validation_ids))
