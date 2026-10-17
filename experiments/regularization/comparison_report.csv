@@ -1,0 +1,4 @@
+experiment,dropout,weight_decay,best_epoch,best_train_loss,best_validation_loss,validation_perplexity,improvement_vs_baseline_percent,checkpoint
+dropout_02,0.2,0.01,11,2.317794,2.875686,17.737588,2.7706,experiments\regularization\dropout_02.pt
+dropout_01,0.1,0.01,8,2.175933,2.883856,17.883098,2.4944,experiments\regularization\dropout_01.pt
+baseline,0.0,0.01,4,2.331565,2.957631,19.252309,0.0,experiments\regularization\baseline.pt

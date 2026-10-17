@@ -1,0 +1,4 @@
+experiment,dropout,weight_decay,best_epoch,best_train_loss,best_validation_loss,checkpoint,history
+baseline,0.0,0.01,4,2.331565,2.957631,experiments\regularization\baseline.pt,experiments\regularization\baseline_history.csv
+dropout_01,0.1,0.01,8,2.175933,2.883856,experiments\regularization\dropout_01.pt,experiments\regularization\dropout_01_history.csv
+dropout_02,0.2,0.01,11,2.317794,2.875686,experiments\regularization\dropout_02.pt,experiments\regularization\dropout_02_history.csv
