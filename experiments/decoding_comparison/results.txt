@@ -1,0 +1,69 @@
+PROMPT: hello world
+STRATEGY: greedy
+TEXT: hello worldel chits s.
+
+
+
+
+
+
+Ablethe nexa se adicking cormally
+----------------------------------------------------------------------
+PROMPT: hello world
+STRATEGY: sampling
+TEXT: hello worldelure mastcWrits wation anges acay try lvery the carroext
+----------------------------------------------------------------------
+PROMPT: hello world
+STRATEGY: top_k_10
+TEXT: hello worldelure masthWrits wation anges acay try la coformationiing ei
+----------------------------------------------------------------------
+PROMPT: hello world
+STRATEGY: cool_top_k_10
+TEXT: hello worldel resent whexthom senes a nhe he ly la chformationialli
+----------------------------------------------------------------------
+PROMPT: machine learning
+STRATEGY: greedy
+TEXT: machine learning the modeldelyer cts stodizer hation chodicking chis thex
+----------------------------------------------------------------------
+PROMPT: machine learning
+STRATEGY: sampling
+TEXT: machine learninghe ure masCcoenzts wationodis. The y werneverfQfris text
+----------------------------------------------------------------------
+PROMPT: machine learning
+STRATEGY: top_k_10
+TEXT: machine learninghe pA meifkenmpreditodis. The myererneverfore cis theh
+----------------------------------------------------------------------
+PROMPT: machine learning
+STRATEGY: cool_top_k_10
+TEXT: machine learning trattion sfromprestodis. The myerrainverfore cis theh
+----------------------------------------------------------------------
+PROMPT: The
+STRATEGY: greedy
+TEXT: Thes. Thise the model sethe mocoples a pra sse a cus.
+----------------------------------------------------------------------
+PROMPT: The
+STRATEGY: sampling
+TEXT: Thempers. Bitining entoothe Lmp. v ytwa lhe he recicxtiext
+----------------------------------------------------------------------
+PROMPT: The
+STRATEGY: top_k_10
+TEXT: Thempers. Qe thosghothe
+
+
+
+
+
+
+wera ehe meciceticking
+----------------------------------------------------------------------
+PROMPT: The
+STRATEGY: cool_top_k_10
+TEXT: Thes. A meise mpperfthe
+
+
+
+
+
+
+A tokenss he mecira next
+----------------------------------------------------------------------

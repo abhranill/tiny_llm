@@ -1,0 +1,13 @@
+prompt,strategy,whitespace_token_count,unique_token_ratio,repeated_bigram_rate,repeated_trigram_rate
+hello world,greedy,8,1.0,0.0,0.0
+hello world,sampling,9,1.0,0.0,0.0
+hello world,top_k_10,9,1.0,0.0,0.0
+hello world,cool_top_k_10,10,1.0,0.0,0.0
+machine learning,greedy,8,1.0,0.0,0.0
+machine learning,sampling,8,1.0,0.0,0.0
+machine learning,top_k_10,7,1.0,0.0,0.0
+machine learning,cool_top_k_10,6,1.0,0.0,0.0
+The,greedy,11,0.9091,0.0,0.0
+The,sampling,9,1.0,0.0,0.0
+The,top_k_10,6,1.0,0.0,0.0
+The,cool_top_k_10,9,0.8889,0.0,0.0

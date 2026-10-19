@@ -1,0 +1,34 @@
+prompt,strategy,temperature,top_k,seed,generated_text
+hello world,greedy,1.0,,42,"hello worldel chits s.
+
+
+
+
+
+
+Ablethe nexa se adicking cormally"
+hello world,sampling,1.0,,42,hello worldelure mastcWrits wation anges acay try lvery the carroext
+hello world,top_k_10,1.0,10,42,hello worldelure masthWrits wation anges acay try la coformationiing ei
+hello world,cool_top_k_10,0.7,10,42,hello worldel resent whexthom senes a nhe he ly la chformationialli
+machine learning,greedy,1.0,,42,machine learning the modeldelyer cts stodizer hation chodicking chis thex
+machine learning,sampling,1.0,,42,machine learninghe ure masCcoenzts wationodis. The y werneverfQfris text
+machine learning,top_k_10,1.0,10,42,machine learninghe pA meifkenmpreditodis. The myererneverfore cis theh
+machine learning,cool_top_k_10,0.7,10,42,machine learning trattion sfromprestodis. The myerrainverfore cis theh
+The,greedy,1.0,,42,Thes. Thise the model sethe mocoples a pra sse a cus.
+The,sampling,1.0,,42,Thempers. Bitining entoothe Lmp. v ytwa lhe he recicxtiext
+The,top_k_10,1.0,10,42,"Thempers. Qe thosghothe
+
+
+
+
+
+
+wera ehe meciceticking "
+The,cool_top_k_10,0.7,10,42,"Thes. A meise mpperfthe
+
+
+
+
+
+
+A tokenss he mecira next"
